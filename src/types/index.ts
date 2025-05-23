@@ -20,3 +20,9 @@ export interface IOrderResult {
   id: string,    
   total: number,
 }
+
+export interface IModal {
+  open(): void;
+  close(): void;
+  render(content: HTMLElement): void;
+}
