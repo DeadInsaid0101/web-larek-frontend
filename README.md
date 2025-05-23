@@ -1,3 +1,5 @@
+https://github.com/DeadInsaid0101/web-larek-frontend
+
 # Проектная работа "Веб-ларек"
 
 Стек: HTML, SCSS, TS, Webpack
