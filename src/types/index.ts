@@ -1,19 +1,23 @@
 export interface IProductItem {
   id: string,
-  name: string,
+  title: string,
   description: string,
   category: string,
-  img: string,
+  image: string,
   price: number | null,
 }
 
-export interface IOrder {
-payment: string,
-address: string,
+export interface IOrder extends IOrderForm {
+
+total: number,
+items: string[],
+}
+
+export interface IOrderForm {
+  payment: string,
+  address: string,
 phone: string,
 email: string,
-total: string | number,
-items: string[],
 }
 
 export interface IOrderResult {
@@ -24,7 +28,8 @@ export interface IOrderResult {
 export interface IAppDataState {
   catalog: IProductItem[];
   basket: IProductItem[];
-  order: IOrder;
-  preview: IProductItem | null;
-  total: number;
+ order: IOrder;
+ // preview: IProductItem | null;
 }
+
+export type FormErrors = Partial<Record<keyof IOrder, string>>;

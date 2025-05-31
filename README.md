@@ -61,12 +61,11 @@ yarn build
  - toggleClass(element: HTMLElement, className: string, state: boolean): void - переключает CSS-класс у элемента. Используется для управления отображением или состоянием.
  - setText(element: HTMLElement, value: unknown): void - устанавливает текстовое содержимое элемента.
  - setImage(element: HTMLImageElement, src: string, alt: string): void - устанавливает атрибуты изображения.
- - setDisabled(element: HTMLElement, state: boolean): void - устанавливает или снимает атрибут disabled у элемента формы.
  - render(data: Partial<T>): HTMLElement - применяет переданные данные или их часть к экземпляру компонента. Используется для обновления визуального состояния.
 
 
 
-Класс Modal — управляет отображением модального окна на странице. Обеспечивает открытие, закрытие и динамическую подмену содержимого модального окна, независимо от типа отображаемого контента. Наследуется от базового класса Component<ModalData>.
+Класс Modal — управляет отображением модального окна на странице. Обеспечивает открытие, закрытие и динамическую подмену содержимого модального окна, независимо от типа отображаемого контента. Наследуется от базового класса Component<IModalData>.
 
 Конструктор:
  - container: HTMLElement — DOM-элемент модального окна, в котором происходит рендеринг.
@@ -84,7 +83,7 @@ yarn build
 
 
 
-Класс Basket — класс, отвечающий за отображение содержимого корзины. Он наследуется от базового класса Component<IProductItem[]>, что позволяет ему получать массив товаров и отрисовывать их в DOM. Он отображает данные, которые передаются в него из модели через презентер.
+Класс Basket — класс, отвечающий за отображение содержимого корзины. Он наследуется от базового класса Component<IProductItem[]>, что позволяет ему типизировать массив товаров и отрисовывать их в DOM. Он отображает данные, которые передаются в него из модели через презентер.
 
 Конструктор:
  - container: HTMLElement — DOM-элемент, в который будет рендериться содержимое корзины.
@@ -96,7 +95,7 @@ yarn build
  - render(data: IProductItem[]): HTMLElement - отображает список товаров в корзине.
  - setEmptyMessage(message: string): void - показывает сообщение, если корзина пуста.
  - setTotal(total: string | number): void - обновляет информацию об общей сумме заказа.
- - setRemoveHandler(handler: (id: string) => void): void - у - станавливает обработчики кнопок «Удалить» для каждого товара.
+ - setRemoveHandler(handler: (id: string) => void): void - устанавливает обработчики кнопок «Удалить» для каждого товара.
 
 
 
@@ -111,8 +110,8 @@ yarn build
  - inputs: Record<keyof IOrder, HTMLInputElement> — все поля формы.
 
 Методы:
- - render(data?: Partial<IOrder>): HTMLElement - отображает значения полей формы.
- - setSubmitHandler(handler: () => void): void - устанавливает обработчик события отправки формы.
+ ?- render(data?: Partial<IOrder>): HTMLElement - отображает значения полей формы.
+ ?- setSubmitHandler(handler: () => void): void - устанавливает обработчик события отправки формы.
  - getFormData(): IOrderForm - считывает данные из полей формы.
  - clear(): void - очищает все поля формы.
  - setDisabled(state: boolean): void - включает или отключает все поля формы и кнопку отправки.
@@ -129,7 +128,7 @@ yarn build
  - container: HTMLElement — DOM-элемент.
 
 Методы:
- - render(data: { total: number }): HTMLElement - отображает в контейнере сообщение с итоговой суммой покупки.
+ - setTotal(total: number): HTMLElement - отображает в контейнере сообщение с итоговой суммой покупки.
 
 
 
@@ -148,7 +147,7 @@ yarn build
 Методы:
 set counter: number — устанавливает значение счётчика товаров в корзине.
 set catalog: HTMLElement[] — обновляет содержимое каталога.
-locked: boolean — блокирует или разблокирует страницу.
+set locked: boolean — блокирует или разблокирует страницу.
 
 
 
@@ -224,41 +223,16 @@ set address — устанавливает значение в поле адре
  - order: IOrder — данные текущего заказа.
 
 Методы:
- - setCatalog(items: IProductItem[]): void - преобразует полученный с сервера каталог в объекты и сохраняет в поле catalog. Генерирует событие items:changed.
- - setPreview(item: IProductItem): void - устанавливает выбранный товар для предварительного просмотра и генерирует событие preview:changed.
- - setProductToBasket(item: IProductItem): void - добавляет товар в массив корзины.
- - removeProductToBasket(item: IProductItem): void - удаляет товар из массива корзины.
+! - setCatalog(items: IProductItem[]): void - сохраняет полученный с сервера каталог в поле catalog. Генерирует событие items:changed.
+? - setPreview(item: IProductItem): void - устанавливает выбранный товар для предварительного просмотра и генерирует событие preview:changed.
+! - setProductToBasket(item: IProductItem): void - добавляет товар в массив корзины.
+! - removeProductToBasket(item: IProductItem): void - удаляет товар из массива корзины.
  - clearBasket(): void - очищает корзину.
  - get basket(): IProductItem[] - возвращает содержимое корзины.
- - getTotal(): number - возвращает сумму всех товаров в заказе.
+ !- getTotal(): number - возвращает сумму всех товаров в заказе.
  - get statusBasket(): boolean - возвращает true, если корзина пуста.
  - set total(value: number): void - устанавливает итоговую сумму заказа.
  - validateOrder(): boolean - валидирует адрес доставки. Генерирует событие formErrors:change.
  - validateContacts(): boolean - валидирует email и телефон. Возвращает true, если ошибок нет. Генерирует событие formErrors:change.
 
 
-
-Представитель:
-
-Класс AppPresenter - отвечает за координацию работы модели и представлений. Обрабатывает пользовательские события, обновляет модель, и обновляет представление на основе изменений в модели.
-
-Конструктор:
- - model: AppData — экземпляр модели приложения, содержащий все данные.
- - views: { ... } — объект со всеми компонентами представления.
- - events: IEvents — объект для прослушивания и генерации событий.
-
-Методы:
- - init() - инициализирует начальное состояние приложения.
- - handleProductClick(id: string) - получает товар по id из модели.
- - handleAddToBasket(id: string) - добавляет товар в корзину и обновляет счётчик товаров.
- - handleRemoveFromBasket(id: string) - удаляет товар из корзины.
- - handleOrderSubmit() - валидирует форму адреса, осуществляет переходит к форме контактов.
- - handleContactsSubmit() - валидирует контактные данные, рассчитывает сумму, очищает корзину и показывает сообщение об успехе.
-
-Обработка событий:
- - preview:changed → вызывает открытие модального окна и отображает карточку товара.
- - items:changed → перерисовывает каталог товаров на главной странице.
- - formErrors:change → передаёт ошибки валидации в компонент формы.
- - order:ready → активирует кнопку оформления заказа.
- - basket:open → открывает модальное окно с корзиной.
- - payment:change → обновляет выбранный способ оплаты в модели.
