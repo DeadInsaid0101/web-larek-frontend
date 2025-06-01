@@ -1,4 +1,4 @@
-import { IOrder, IOrderForm } from "../../types";
+
 import { ensureAllElements, ensureElement } from "../../utils/utils";
 import { Component } from "./Component";
 

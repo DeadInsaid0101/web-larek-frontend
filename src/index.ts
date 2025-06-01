@@ -5,13 +5,13 @@ import { AppData } from './components/Model/AppData';
 import { Page } from './components/View/Page';
 import { Card } from './components/View/Card';
 import { API_URL, CDN_URL } from './utils/constants';
-import { ensureElement, cloneTemplate, ensureAllElements } from './utils/utils';
-import { IOrder, IOrderForm, IProductItem } from './types';
+import { ensureElement, cloneTemplate } from './utils/utils';
+import { IOrder, IOrderResult, IProductItem } from './types';
 import { EventEmitter } from './components/base/events';
 import { Modal } from './components/View/Modal';
 import { CardPreview } from './components/View/CardPreview';
-import { Basket, IBasketItem } from './components/View/Basket';
-import { Form, IFormState } from './components/View/Form';
+import { Basket } from './components/View/Basket';
+import { Form } from './components/View/Form';
 import { Order } from './components/View/Order';
 import { Contacts } from './components/View/Contacts';
 import { Success } from './components/View/Success';
@@ -34,7 +34,11 @@ const basket = new Basket(basketElement, events)
 const form = new Form(orderContainer, events)
 const order = new Order(orderContainer, events)
 const contacts = new Contacts(contactsContainer, events)
-const success = new Success(successContainer)
+const success = new Success(successContainer, {
+  onClick: () => {
+    modal.close()
+  }
+})
 
 
 
@@ -46,48 +50,47 @@ api.getProductCatalog()
     model.setCatalog(items)
     // console.log('yes')
     // console.log(items)
-
-    const cardElements = items.map(item => {
-
-      const cardElement = cloneTemplate<HTMLButtonElement>('#card-catalog')
-
-
-      const card = new Card(cardElement, events)
-      card.render({
-        title: item.title,
-        category: item.category,
-        image: item.image,
-        price: item.price,
-        description: item.description,
-        id: item.id
-      });
-
-
-      cardElement.addEventListener('click', () => {
-        //   console.log('fff')
-        events.emit('preview:changed', item);
-        //     console.log(item)
-      })
-      return cardElement;
-    });
-
-
-    page.catalog = cardElements;
-
-
   })
-
-
   .catch(() => {
     console.log('error');
   });
+
+
+events.on<IProductItem[]>('items:changed', items => {
+  const cardElements = items.map(item => {
+    const cardElement = cloneTemplate<HTMLButtonElement>('#card-catalog')
+
+    const card = new Card(cardElement, events, {
+      onClick: () => {
+        events.emit('preview:changed', item)
+      }
+    })
+
+    card.render({
+      title: item.title,
+      category: item.category,
+      image: item.image,
+      price: item.price,
+      description: item.description,
+      id: item.id
+    });
+
+    return cardElement;
+  });
+
+  page.catalog = cardElements;
+});
 
 
 
 events.on<IProductItem>('preview:changed', item => {
 
   const previewContainer = cloneTemplate<HTMLElement>('#card-preview');
-  const cardPreview = new CardPreview(previewContainer, events)
+  const cardPreview = new CardPreview(previewContainer, events, {
+    onClick: () => {
+      events.emit('basket:add', item)
+    }
+  })
 
   cardPreview.render({
     title: item.title,
@@ -98,56 +101,54 @@ events.on<IProductItem>('preview:changed', item => {
     id: item.id
   });
 
-  const addButtonToBasket = cardPreview._cardButton
-  addButtonToBasket.addEventListener('click', () => {
-    events.emit('basket:add', item)
-    //  console.log(item)
-  })
+
   modal.render(previewContainer);
   modal.open();
 
+  if (item.id && model.basket.some(product => product.id === item.id)) {
+    cardPreview.cardButton.disabled = true
+  }
   //console.log(modal.isActive)
 });
 
 
-
 events.on<IProductItem>('basket:add', item => {
   model.setProductToBasket(item)
-  events.emit('basket:changed', model.basket);
+
   modal.close()
   // console.log(model.basket)
 })
 
-
-
-events.on<IBasketItem>('basket:remove', item => {
-  model.removeProductToBasket(item);
-  events.emit('basket:changed', model.basket);
-});
-
-
-
-
-events.on<IBasketItem[]>('basket:changed', items => {
+events.on<IProductItem[]>('basket:changed', items => {
   if (modal.isActive) {
-    basket.render(items);
-    const total = model.getTotal(items)
+
+    const basketItems = items.map((item, index) => {
+      const basketItem = cloneTemplate<HTMLElement>('#card-basket');
+
+      ensureElement<HTMLElement>('.card__title', basketItem).textContent = item.title;
+      ensureElement<HTMLElement>('.basket__item-index', basketItem).textContent = String(index + 1);
+      ensureElement<HTMLElement>('.card__price', basketItem).textContent = item.price === null ? 'Бесценно' : `${item.price}`;
+
+      return basketItem;
+    });
+
+
+    basket.render(basketItems);
+    const total = model.getTotal()
     basket.setTotal(total);
     basket.setEmptyMessage(items)
 
     //    console.log(items)
-    if (items.length === 0) {
+    if (items.length === 0 || (items.length === 1 && items[0].price === null)) {
       basket.continueButton.disabled = true
     }
     else {
       basket.continueButton.disabled = false
     }
     basket.setRemoveHandler(item => {
-      model.removeProductToBasket(item)
-      events.emit('basket:remove', items);
-
+      model.removeProductFromBasket(item)
       //  console.log(items)
-    }, model.basket)
+    }, items)
 
   }
   page.counter = items.length;
@@ -155,41 +156,22 @@ events.on<IBasketItem[]>('basket:changed', items => {
 })
 
 
-
-
-
-const basketButton = page._basket
-basketButton.addEventListener('click', () => {
-  events.emit('basket:open', model.basket)
-})
-
-events.on<IBasketItem[]>('basket:open', item => {
+events.on<IProductItem[]>('basket:open', () => {
   modal.render(basketElement)
   //console.log('dd')
   modal.open()
-  basket.setEmptyMessage(item)
-  if (item.length === 0) {
+  basket.setEmptyMessage(model.basket)
+  if (model.basket.length === 0 || (model.basket.length === 1 && model.basket[0].price === null)) {
     basket.continueButton.disabled = true
   }
   else {
     basket.continueButton.disabled = false
   }
-
-  basket.continueButton.addEventListener('click', () => {
-    events.emit('order:open', item)
-    //   console.log('22')
-    //   console.log(item)
-
-  })
-
-
 })
 
-events.on<IBasketItem[]>('order:open', items => {
+events.on<IProductItem[]>('order:open', () => {
   // console.log('uu')
   modal.close();
-
-
 
   const orderContainer = order.render({
     payment: 'card',
@@ -198,23 +180,12 @@ events.on<IBasketItem[]>('order:open', items => {
     errors: []
   });
 
-
   modal.render(orderContainer);
   modal.open();
-
-
   //console.log(model.order)
-
-
-
 })
 
-
-
-
-
-
-events.on('formErrors:change', (errors: Partial<IOrderForm>) => {
+events.on('formErrors:change', (errors: Partial<IOrder>) => {
   const { address, payment, email, phone } = errors;
   order.valid = !address && !payment;
   contacts.valid = !phone && !email;
@@ -223,25 +194,26 @@ events.on('formErrors:change', (errors: Partial<IOrderForm>) => {
 });
 
 
-events.on(/^order\..*:change/, (data: { field: keyof IOrderForm, value: string }) => {
+events.on(/^order\..*:change/, (data: { field: keyof IOrder, value: string }) => {
   model.setOrderField(data.field, data.value);
 });
 
-events.on(/^contacts\..*:change/, (data: { field: keyof IOrderForm, value: string }) => {
+events.on(/^contacts\..*:change/, (data: { field: keyof IOrder, value: string }) => {
   model.setContactsField(data.field, data.value);
 });
 
 
 events.on('payment:change', (item: HTMLButtonElement) => {
-  model.order.payment = item.name;
-  // console.log(model.order)
+  model.order.payment = item.name
+
+  if (model.order.payment === item.name) {
+    order.payment = item.name;
+    //  console.log(model.order)
+  }
 })
 
-events.on<IOrder>('order:submit', items => {
-  model.order.total = model.getTotal(model.basket)
 
-  model.addProductIdToOrder()
-
+events.on<IOrder>('order:submit', () => {
   // console.log(model.order)
   modal.close()
   const contactsContainer = contacts.render({
@@ -255,21 +227,20 @@ events.on<IOrder>('order:submit', items => {
   modal.open()
 })
 
-events.on<IOrder>('contacts:submit', () => {
-  api.orderProducts(model.order)
+events.on<IOrderResult>('contacts:submit', () => {
+  const order = model.createOrder()
+  api.orderProducts(order)
     .then(result => {
 
       modal.close()
       modal.render(successContainer)
       modal.open()
-      //console.log(result)
+      //  console.log(result)
       success.setTotal(result.total)
       model.clearBasket()
       page.counter = 0;
       basket.setTotal(0)
-      success._button.addEventListener('click', () => {
-        modal.close()
-      })
+      model.validateClear()
     })
 
     .catch(() => {
@@ -277,7 +248,6 @@ events.on<IOrder>('contacts:submit', () => {
     });
 
 })
-
 
 
 events.on('modal:open', () => {

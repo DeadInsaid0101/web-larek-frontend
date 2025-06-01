@@ -3,17 +3,12 @@ import { ensureElement, cloneTemplate, ensureAllElements } from "../../utils/uti
 import { IEvents } from "../base/events";
 import { Component } from "./Component";
 
-// types.ts
-export interface IBasketItem extends IProductItem {
-  basketItemId: string;  // уникальный идентификатор в корзине
-
-}
 
 
-export class Basket extends Component<IProductItem[]> {
-  container: HTMLElement
-  basketList: HTMLElement
-  total: HTMLElement
+export class Basket extends Component<unknown> {
+  protected container: HTMLElement
+  protected basketList: HTMLElement
+  protected total: HTMLElement
   continueButton: HTMLButtonElement
 
 
@@ -25,34 +20,20 @@ export class Basket extends Component<IProductItem[]> {
     this.continueButton = ensureElement<HTMLButtonElement>('.basket__button', container)
 
 
+    this.continueButton.addEventListener('click', () => {
+      events.emit('order:open')
+    })
+
+
   }
 
-  render(data: IBasketItem[]): HTMLElement {
-
+  render(items: HTMLElement[]): HTMLElement {
     this.basketList.innerHTML = '';
-
-
-
-
-    data.forEach((item, index) => {
-
-      const li = cloneTemplate<HTMLElement>('#card-basket');
-      ensureElement<HTMLElement>('.basket__item-index', li).textContent = String(index + 1);
-      ensureElement<HTMLElement>('.card__title', li).textContent = item.title;
-      li.dataset.basketItemId = item.basketItemId
-      li.dataset.index = String(index);
-      ensureElement<HTMLElement>('.card__price', li).textContent = item.price === null ? 'Бесценно' : `${item.price}`;
-
-
-      li.dataset.id = item.id;
-
-      this.basketList.appendChild(li);
-
-    })
+    items.forEach(item => this.basketList.appendChild(item));
     return this.container;
   }
 
-  setEmptyMessage(data: IBasketItem[]): void {
+  setEmptyMessage(data: IProductItem[]): void {
     if (data.length === 0) {
       this.basketList.innerHTML = `<li style='list-style: none'>Корзина пуста</li>`;
     }
@@ -63,19 +44,13 @@ export class Basket extends Component<IProductItem[]> {
     this.total.textContent = `${total} синапсов`
   }
 
-  setRemoveHandler(handler: (basketItem: IBasketItem) => void, data: IBasketItem[]): void {
-    const deleteBtns = this.basketList.querySelectorAll<HTMLButtonElement>('.basket__item-delete');
-    deleteBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const li = btn.closest<HTMLElement>('.basket__item');
+  setRemoveHandler(handler: (productId: string) => void, data: IProductItem[]): void {
+    const deleteButtons = this.basketList.querySelectorAll<HTMLButtonElement>('.basket__item-delete');
 
-        const cid = li?.dataset.basketItemId;
-        if (!cid) return;
-
-        const basketItem = data.find(i => i.basketItemId === cid);
-        if (basketItem) {
-          handler(basketItem);
-        }
+    deleteButtons.forEach((button, idx) => {
+      button.addEventListener('click', () => {
+        const productId = data[idx].id;
+        handler(productId);
       });
     });
   }

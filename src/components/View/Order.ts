@@ -1,10 +1,11 @@
-import { IOrderForm } from "../../types";
+
+import { IOrder } from "../../types";
 import { ensureAllElements } from "../../utils/utils";
 import { IEvents } from "../base/events";
 import { Form } from "./Form";
 
-export class Order extends Form<IOrderForm> {
-    _buttons: HTMLButtonElement[]
+export class Order extends Form<IOrder> {
+    protected _buttons: HTMLButtonElement[]
 
     constructor(container: HTMLFormElement, events: IEvents) {
         super(container, events);
@@ -13,7 +14,7 @@ export class Order extends Form<IOrderForm> {
 
         this._buttons.forEach(button => {
             button.addEventListener('click', () => {
-                this.payment = button.name;
+
                 events.emit('payment:change', button)
 
             });

@@ -1,47 +1,51 @@
-import { IProductItem, IAppDataState, FormErrors, IOrder, IOrderForm } from "../../types"
+import { IProductItem, IAppDataState, FormErrors, IOrder, IOrderResult } from "../../types"
 import { IEvents } from "../base/events"
-import { IBasketItem } from "../View/Basket";
+
 import { Model } from "./Model"
 
 export class AppData extends Model<IAppDataState> {
     catalog: IProductItem[] = [];
-    basket: IBasketItem[] = [];
+    basket: IProductItem[] = [];
     formErrors: FormErrors = {};
     order: IOrder = {
         payment: 'card',
         email: '',
         phone: '',
-        items: [],
         address: '',
-        total: null,
     };
+
 
 
     setCatalog(items: IProductItem[]): void {
         this.catalog = items
+        this.emitChanges('items:changed', this.catalog);
     }
 
     setProductToBasket(item: IProductItem): void {
-        const basketItem: IBasketItem = {
-            ...item,
-            basketItemId: Math.random().toString(30).slice(2)
-        };
-        this.basket.push(basketItem);
+        this.basket.push(item);
+        this.events.emit('basket:changed', this.basket);
+    }
+
+    removeProductFromBasket(productId: string): void {
+        this.basket = this.basket.filter(item => item.id !== productId);
+        this.events.emit('basket:changed', this.basket);
+    }
+
+    getTotal(): number {
+        return this.basket.reduce((sum, i) => sum + (i.price || 0), 0)
 
     }
 
-    removeProductToBasket(basketProductItem: IBasketItem): void {
 
-        const arr = this.basket.filter(item => item.basketItemId !== basketProductItem.basketItemId)
-        this.basket = arr
+    validateClear(): void {
+        this.order.email = '';
+        this.order.phone = '';
+        this.order.address = '';
+        this.order.payment = 'card';
     }
 
-    getTotal(data: IProductItem[]): number {
-        return data.reduce((sum, i) => sum + (i.price || 0), 0)
 
-    }
-
-    setOrderField(field: keyof IOrderForm, value: string) {
+    setOrderField(field: keyof IOrder, value: string) {
         this.order[field] = value;
 
         if (this.validateOrder()) {
@@ -49,7 +53,7 @@ export class AppData extends Model<IAppDataState> {
         }
     }
 
-    setContactsField(field: keyof IOrderForm, value: string) {
+    setContactsField(field: keyof IOrder, value: string) {
         this.order[field] = value;
 
         if (this.validateContacts()) {
@@ -88,13 +92,22 @@ export class AppData extends Model<IAppDataState> {
         return Object.keys(errors).length === 0;
     }
 
-    addProductIdToOrder(): void {
-        this.order.items = this.basket.map(item => item.id);
+    createOrder(): IOrderResult {
+        const items = this.basket.filter(item => item.price !== null).map(item => item.id);
+        const total = this.basket.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        return {
+            ...this.order,
+            items,
+            total,
+        };
     }
+
 
     clearBasket(): void {
         this.basket = []
     }
+
 
 
 }

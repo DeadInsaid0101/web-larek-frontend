@@ -4,11 +4,11 @@ import { IEvents } from "../base/events"
 
 
 export class Modal extends Component<unknown> {
-   modalElement: HTMLElement
-   containerElement: HTMLElement
-   closeButton: HTMLElement
+   protected modalElement: HTMLElement
+   protected containerElement: HTMLElement
+   protected closeButton: HTMLElement
    isActive: boolean = false
-   events: IEvents;
+   protected events: IEvents;
 
    constructor(container: HTMLElement, events: IEvents) {
       super(container)

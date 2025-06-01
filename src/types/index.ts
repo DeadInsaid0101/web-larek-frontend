@@ -1,35 +1,31 @@
 export interface IProductItem {
   id: string,
   title: string,
-  description: string,
+  description?: string,
   category: string,
   image: string,
   price: number | null,
 }
 
-export interface IOrder extends IOrderForm {
-
-total: number,
-items: string[],
-}
-
-export interface IOrderForm {
+export interface IOrder {
   payment: string,
   address: string,
-phone: string,
-email: string,
+  phone: string,
+  email: string,
+
 }
 
-export interface IOrderResult {
-  id: string,    
+
+export interface IOrderResult extends IOrder {
+  items: string[]
   total: number,
 }
 
 export interface IAppDataState {
   catalog: IProductItem[];
   basket: IProductItem[];
- order: IOrder;
- // preview: IProductItem | null;
+  order: IOrder;
 }
 
 export type FormErrors = Partial<Record<keyof IOrder, string>>;
+

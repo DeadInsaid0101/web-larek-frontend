@@ -7,10 +7,10 @@ interface IPage {
 }
 
 export class Page extends Component<IPage> {
-    _counter: HTMLElement
-    _catalog: HTMLElement
-    _wrapper: HTMLElement
-    _basket: HTMLButtonElement
+    protected _counter: HTMLElement
+    protected _catalog: HTMLElement
+    protected _wrapper: HTMLElement
+    protected _basket: HTMLButtonElement
 
     constructor(container: HTMLElement, events?: IEvents) {
         super(container)
@@ -18,6 +18,12 @@ export class Page extends Component<IPage> {
         this._counter = ensureElement<HTMLElement>('.header__basket-counter');
         this._wrapper = ensureElement<HTMLElement>('.page__wrapper');
         this._basket = ensureElement<HTMLButtonElement>('.header__basket');
+
+
+        this._basket.addEventListener('click', () => {
+            events.emit('basket:open');
+        });
+
 
     }
 

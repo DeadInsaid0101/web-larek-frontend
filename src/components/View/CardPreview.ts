@@ -1,25 +1,39 @@
 import { IProductItem } from "../../types";
 import { ensureElement } from "../../utils/utils";
 import { IEvents } from "../base/events";
-import { Card } from "./Card";
+import { Card, IActions } from "./Card";
+
 
 
 export class CardPreview extends Card {
-    _description: HTMLElement;
-    _cardButton: HTMLButtonElement
+    protected _description: HTMLElement;
+    cardButton: HTMLButtonElement
 
-    constructor(container: HTMLElement, events?: IEvents) {
+    constructor(container: HTMLElement, events?: IEvents, actions?: IActions) {
         super(container, events)
 
         this._description = ensureElement<HTMLElement>('.card__text', container)
-        this._cardButton = ensureElement<HTMLButtonElement>('.card__button', container)
+        this.cardButton = ensureElement<HTMLButtonElement>('.card__button', container)
 
 
+        if (actions?.onClick) {
+            this.cardButton.addEventListener('click', actions.onClick);
+        }
+
+    }
+
+    set description(value: string) {
+        this.setText(this._description, value);
     }
 
     render(data?: Partial<IProductItem>): HTMLElement {
         super.render(data);
-        this._description.textContent = data.description
+        if (data.description !== undefined) {
+            this.description = data.description;
+        }
+        else {
+            this.description = ''
+        }
         return this.container
     }
 }
