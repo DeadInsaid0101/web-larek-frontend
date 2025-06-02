@@ -1,5 +1,4 @@
 import { IProductItem, IAppDataState, FormErrors, IOrder, IOrderResult } from "../../types"
-import { IEvents } from "../base/events"
 
 import { Model } from "./Model"
 
@@ -26,9 +25,11 @@ export class AppData extends Model<IAppDataState> {
         this.events.emit('basket:changed', this.basket);
     }
 
-    removeProductFromBasket(productId: string): void {
-        this.basket = this.basket.filter(item => item.id !== productId);
-        this.events.emit('basket:changed', this.basket);
+    removeProductFromBasket(item: IProductItem) {
+        const index = this.basket.indexOf(item);
+        if (index >= 0) {
+            this.basket.splice(index, 1);
+        }
     }
 
     getTotal(): number {
@@ -44,6 +45,11 @@ export class AppData extends Model<IAppDataState> {
         this.order.payment = 'card';
     }
 
+
+    setPayment(field: keyof IOrder, value: string) {
+        this.order[field] = value;
+        this.events.emit('payment:save', this.order);
+    }
 
     setOrderField(field: keyof IOrder, value: string) {
         this.order[field] = value;
@@ -92,16 +98,14 @@ export class AppData extends Model<IAppDataState> {
         return Object.keys(errors).length === 0;
     }
 
-    createOrder(): IOrderResult {
-        const items = this.basket.filter(item => item.price !== null).map(item => item.id);
-        const total = this.basket.reduce((sum, item) => sum + (item.price || 0), 0);
-
-        return {
-            ...this.order,
-            items,
-            total,
-        };
+    getOrder(): IOrder {
+        return this.order;
     }
+
+    getBasket(): IProductItem[] {
+        return this.basket;
+    }
+
 
 
     clearBasket(): void {

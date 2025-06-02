@@ -26,14 +26,4 @@ export class CardPreview extends Card {
         this.setText(this._description, value);
     }
 
-    render(data?: Partial<IProductItem>): HTMLElement {
-        super.render(data);
-        if (data.description !== undefined) {
-            this.description = data.description;
-        }
-        else {
-            this.description = ''
-        }
-        return this.container
-    }
 }

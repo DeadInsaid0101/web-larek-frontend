@@ -15,6 +15,7 @@ import { Form } from './components/View/Form';
 import { Order } from './components/View/Order';
 import { Contacts } from './components/View/Contacts';
 import { Success } from './components/View/Success';
+import { CardBasket } from './components/View/CardBasket';
 
 const modalContainer = ensureElement<HTMLElement>('#modal-container')
 const basketElement = cloneTemplate<HTMLElement>('#basket')
@@ -124,18 +125,25 @@ events.on<IProductItem[]>('basket:changed', items => {
 
     const basketItems = items.map((item, index) => {
       const basketItem = cloneTemplate<HTMLElement>('#card-basket');
+      const cardBasket = new CardBasket(basketItem, {
+        onClick: () => events.emit('basket:remove', item)
+      });
 
-      ensureElement<HTMLElement>('.card__title', basketItem).textContent = item.title;
-      ensureElement<HTMLElement>('.basket__item-index', basketItem).textContent = String(index + 1);
-      ensureElement<HTMLElement>('.card__price', basketItem).textContent = item.price === null ? 'Бесценно' : `${item.price}`;
+      cardBasket.render({
+        title: item.title,
+        price: item.price,
+        index: index + 1
+      })
 
       return basketItem;
     });
 
 
-    basket.render(basketItems);
-    const total = model.getTotal()
-    basket.setTotal(total);
+    basket.render({
+      items: basketItems,
+      total: model.getTotal()
+    });
+
     basket.setEmptyMessage(items)
 
     //    console.log(items)
@@ -145,16 +153,24 @@ events.on<IProductItem[]>('basket:changed', items => {
     else {
       basket.continueButton.disabled = false
     }
-    basket.setRemoveHandler(item => {
-      model.removeProductFromBasket(item)
-      //  console.log(items)
-    }, items)
+
+
+
 
   }
+
+
   page.counter = items.length;
 
 })
 
+
+events.on<IProductItem>('basket:remove', item => {
+  model.removeProductFromBasket(item)
+  events.emit('basket:changed', model.basket)
+
+
+})
 
 events.on<IProductItem[]>('basket:open', () => {
   modal.render(basketElement)
@@ -204,17 +220,18 @@ events.on(/^contacts\..*:change/, (data: { field: keyof IOrder, value: string })
 
 
 events.on('payment:change', (item: HTMLButtonElement) => {
-  model.order.payment = item.name
+  model.setPayment('payment', item.name);
 
-  if (model.order.payment === item.name) {
-    order.payment = item.name;
-    //  console.log(model.order)
-  }
+
 })
+
+events.on<IOrder>('payment:save', paymentData => {
+  order.payment = paymentData.payment;
+});
 
 
 events.on<IOrder>('order:submit', () => {
-  // console.log(model.order)
+  //console.log(model.order)
   modal.close()
   const contactsContainer = contacts.render({
     email: '',
@@ -228,14 +245,22 @@ events.on<IOrder>('order:submit', () => {
 })
 
 events.on<IOrderResult>('contacts:submit', () => {
-  const order = model.createOrder()
-  api.orderProducts(order)
+  const orderTotal = model.getOrder()
+  const basketItems = model.getBasket()
+
+  const orderResult: IOrderResult = {
+    ...orderTotal,
+    items: basketItems.filter(item => item.price !== null).map(item => item.id),
+    total: basketItems.reduce((sum, item) => sum + (item.price || 0), 0),
+  };
+  console.log(orderResult)
+  api.orderProducts(orderResult)
     .then(result => {
 
       modal.close()
       modal.render(successContainer)
       modal.open()
-      //  console.log(result)
+      //   console.log(orderResult)
       success.setTotal(result.total)
       model.clearBasket()
       page.counter = 0;

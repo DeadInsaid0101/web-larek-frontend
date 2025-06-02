@@ -1,11 +1,14 @@
 import { IProductItem } from "../../types";
-import { ensureElement, cloneTemplate, ensureAllElements } from "../../utils/utils";
+import { ensureElement } from "../../utils/utils";
 import { IEvents } from "../base/events";
 import { Component } from "./Component";
 
+interface IBasket {
+  items: HTMLElement[];
+  total: number;
+}
 
-
-export class Basket extends Component<unknown> {
+export class Basket extends Component<IBasket> {
   protected container: HTMLElement
   protected basketList: HTMLElement
   protected total: HTMLElement
@@ -27,9 +30,12 @@ export class Basket extends Component<unknown> {
 
   }
 
-  render(items: HTMLElement[]): HTMLElement {
+  render(data: Partial<IBasket>): HTMLElement {
     this.basketList.innerHTML = '';
+    const items = data.items ?? [];
+    const total = data.total ?? 0;
     items.forEach(item => this.basketList.appendChild(item));
+    this.setText(this.total, `${total} синапсов`);
     return this.container;
   }
 
@@ -44,14 +50,6 @@ export class Basket extends Component<unknown> {
     this.total.textContent = `${total} синапсов`
   }
 
-  setRemoveHandler(handler: (productId: string) => void, data: IProductItem[]): void {
-    const deleteButtons = this.basketList.querySelectorAll<HTMLButtonElement>('.basket__item-delete');
 
-    deleteButtons.forEach((button, idx) => {
-      button.addEventListener('click', () => {
-        const productId = data[idx].id;
-        handler(productId);
-      });
-    });
-  }
+
 }
